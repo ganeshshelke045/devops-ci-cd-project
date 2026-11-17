@@ -9,6 +9,9 @@ on:
     branches:
       - main
 
+permissions:
+  contents: read
+
 jobs:
   build:
     name: Build and Test
@@ -16,16 +19,70 @@ jobs:
 
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
-      - name: Run CI Pipeline
-        run: echo "CI Pipeline executed successfully!"
+      - name: Verify Website File
+        run: |
+          test -s index.html
+          echo "Website file verified successfully!"
 
-      - name: Build Application
-        run: echo "Application build successful!"
+      - name: Configure GitHub Pages
+        if: github.event_name == 'push'
+        uses: actions/configure-pages@v5
 
-      - name: Test Application
-        run: echo "All tests passed!"
+      - name: Upload Website Artifact
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: .
 
-      - name: Deployment Message
-        run: echo "Application ready for deployment!"
+  deploy:
+    name: Deploy Website
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+# name: DevOps CI-CD Pipeline
+
+# on:
+#   push:
+#     branches:
+#       - main
+#   pull_request:
+#     branches:
+#       - main
+
+# jobs:
+#   build:
+#     name: Build and Test
+#     runs-on: ubuntu-latest
+
+#     steps:
+#       - name: Checkout Code
+#         uses: actions/checkout@v4
+
+#       - name: Run CI Pipeline
+#         run: echo "CI Pipeline executed successfully!"
+
+#       - name: Build Application
+#         run: echo "Application build successful!"
+
+#       - name: Test Application
+#         run: echo "All tests passed!"
+
+#       - name: Deployment Message
+#         run: echo "Application ready for deployment!"
